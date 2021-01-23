@@ -1,0 +1,303 @@
+#!/bin/bash
+Version=1.05
+Myname="${0##*/}"
+
+:<<'DOC'
+= text2pdf - convert text file(s) to pdf.
+
+= Synopsis
+text2pdf [options] [file ...]	
+
+== Options
+-h|--help	Print short help and exit
+-H|--Help	Print full documentation via less and exit
+-V|--version	Print version and exit
+-c|--cols=ARG	Print ARG columns on the page, default: 1
+-f|--font=ARG	iset TTF/OTF font to ARG; default: Latin Modern Mono
+-l|--lscape	Print landscape; default: portrait
+-n|--number	Number the lines; default: no numbering
+-o|--out=ARG	write PDF to ARG[.pdf]; default: write to standard output
+-p|--page	Start each file on a new page.
+-s|--size=ARG	Fontsize to ARG points; default: 10
+--squeeze	squeeze multiple newlines in input to one
+--tabstop=ARG	Have tabs |i| characters apart; default: 8
+-t|--title=ARG	Print counter + file name before the output of each file
+-w|--white	Set white between lines to ARG points; default: 2
+
+
+= Description
+text2pdf converts one or more text files to pdf. You can print the text in
+up to 9 columns (default: 1), in any font size (default: 10). The font used
+by default is Latin Modern Mono. You can start each file on a new page and
+introduce each file with a numbered header containing its name; and you can
+number the lines.
+
+= Options
+--help	
+	prints short help information.
+	
+--Help	
+	Prints full documentation /via/ less.
+	
+--title	
+	the text of each file will be preceeded with a header line
+	containing a counter followed by the file name.
+	
+--page	
+	the text of each file will start on a new page.
+	
+--cols=n	
+	the output will be printed in |n| columns, where n=1-9, default: 1. This is
+	useful, for example, for printing a file listing.
+	
+--size=f	
+	set the point size to |f|, default: 10.
+	
+--white=w	
+	set white between lines to |w|, default: 2.
+	
+--font=NAME	
+	changes the font to |NAME|, which must be the PostScript name of an
+	available TTF or OTF font.  The default (probably in your distro) is
+	[EversonMono-Bold](www.gnu.org/software/freefont/). Be sure the choose a font that
+	contains all characters occurring in your file. You probably also want
+	the font to be monospaced.
+	
+--number	
+	lines will be numbered.
+	
+--tabstop=n	
+	tabs will be expanded to |n| spaces. The default is 8.
+	
+--squeeze	
+	multiple empty lines will be squeezed to a single empty line.
+	
+= Author
+[Wybo Dekker](wybo@dekkerdocumenten.nl)
+
+= Copyright
+Released under the [GNU General Public License](www.gnu.org/copyleft/gpl.html)
+DOC
+
+REd='\e[38;5;9m' Mag='\e[38;5;5m' Nor='\e[0m'
+    die() { local i; for i; do echo -e "$Myname: $REd$i$Nor"; done 1>&2; exit 1; }
+   Warn() { local i; for i; do echo -e "$Myname: $Mag$i$Nor"; done 1>&2; }
+helpsrt() { sed -n '/^= Synopsis/,/^= /p' "$0"|sed '1d;$d'; exit; }
+helpall() { sed -n "/^:<<'DOC'$/,/^DOC/p" "$0"|sed '1d;$d'|
+            less -P"$Myname-${Version/./·} (press h for help, q to quit)";exit; }
+
+:<<'DOC' #---------------------------------------------------------------------
+= inttest
+synopsis:	 inttest opt int
+description:	check if |int| is a positive integer and print it; if not, 
+		give a fatal message.
+DOC
+#-------------------------------------------------------------------------------
+inttest() {
+   [[ $2 =~ [1-9][0-9]+ ]] ||
+      die "Argument for --$1 ($2) is not a positive integer"
+   printf %d "$2"
+}
+
+:<<'DOC' #---------------------------------------------------------------------
+= excheck
+synopsis:	 excheck executable1 [executable2...]
+description:	check if all needed execs are there and getopt is GNU
+DOC
+#-------------------------------------------------------------------------------
+excheck() {
+   local ok=true i
+   ((BASH_VERSINFO>=4)) || die "Need bash version >= 4"
+   for i; do 
+      command -v "$i" > /dev/null && continue
+      Warn "Missing executable: $i"
+      ok=false
+   done
+   $ok || die
+   getopt -T 
+   [[ $? -ne 4 ]] && die "Your getopt is not GNU"
+}
+
+:<<'DOC' #----------------------------------------------------------------------
+= handle_options
+synopsis:	 handle_options "$@"
+description:	handle the options.
+globals used:	 Myname Version
+globals  set:	 args
+DOC
+#-------------------------------------------------------------------------------
+handle_options() {
+   local options
+   options=$(getopt \
+      -n "$Myname" \
+      -o hHVIb:c:f:lnpr:s:w:t: \
+      -l help,Help,version,batch:,cols:,font:,lscap,numer,page,size:,white:,squeeze,tabstop:,title,width: \
+      -- "$@"
+   ) || exit 1
+   eval set -- "$options"
+   cat='cat'
+   colbeg=
+   colend=
+   font='Latin Modern Mono'
+   lscape=
+   number=false
+   out=''
+   page=false
+   size=10
+   white=2
+   tabstop=8
+   title=
+   while true; do
+      case $1 in
+      (-h|--help)      # Print short help and exit
+            	       helpsrt
+		       ;;
+      (-H|--Help)      # Print full documentation via less and exit
+            	       helpall
+		       ;;
+      (-V|--version)   # Print version and exit
+            	       echo $Version
+		       exit
+		       ;;
+      (-c|--cols=ARG)  # Print ARG columns on the page, default: 1
+		       inttest cols "$2"
+		       case $2 in
+		       (1)      colbeg=
+		                colend=
+		                ;;
+		       ([2-9]+) colbeg="\\begin{multicols}{$2}"
+		                colend="\\end{multicols}"
+		                ;;
+		       esac
+		       shift 2
+		       ;;
+      (-f|--font=ARG)  # Set TTF/OTF font to ARG; default: Latin Modern Mono
+		       font=$2
+		       shift 2
+		       ;;
+      (-l|--lscape)    # Print landscape; default: portrait
+		       lscape=',landscape'
+		       shift
+		       ;;
+      (-n|--number)    # Number the lines; default: no numbering
+		       number=true
+		       shift
+		       ;;
+      (-o|--out=ARG)   # write PDF to ARG[.pdf]; default: write to standard output
+		       out=${2%.pdf}.pdf
+		       shift 2
+		       ;;
+      (-p|--page)      # Start each file on a new page.
+		       page=true
+		       shift
+		       ;;
+      (-s|--size=ARG)  # Fontsize to ARG points; default: 10
+		       size=$2
+		       shift 2
+		       ;;
+      (--squeeze)      # squeeze multiple newlines in input to one
+		       cat='cat -s'
+		       shift
+		       ;;
+      (--tabstop=ARG)  # Have tabs |i| characters apart; default: 8
+		       tabstop=$2
+		       shift 2
+		       ;;
+      (-t|--title=ARG) # Print counter + file name before the output of each file
+		       title='\headtext'
+		       shift
+		       ;;
+      (-w|--white)     # Set white between lines to ARG points; default: 2
+		       white=$2
+		       shift 2
+		       ;;
+      (-I)             instscript "$0" ||
+		          die 'the -I option is for developers only'
+		       exit
+		       ;;
+      (--)             shift
+		       break
+		       ;;
+      (*)              break
+		       ;;
+      esac
+   done
+   args=("$@")
+}
+
+excheck getopt lualatex
+handle_options "$@"
+set -- "${args[@]}"
+
+mess=()
+for i; do
+   if [[ ! -e $i ]]; then
+      mess+=("File $i not found")
+   else
+      enc=$(file -b --mime-encoding "$i")
+      [[ $enc =~ us-ascii|utf-8 ]] ||
+         mess+=("$i: encoding ($enc) is not us-ascii or utf-8; please convert")
+   fi
+done
+(( ${#mess[@]} > 0 )) && die "${mess[@]}"
+
+tmp=$(mktemp -d -t "$Myname.XXXXXXXXXX")
+
+if (( $# == 0 )); then # read from stdin
+   cat - > "$tmp/text"
+   set -- "$tmp/text"
+fi
+
+cat <<-EOF > "$tmp/main.tex"
+	%!lualatex
+	\\documentclass{article}
+	\\usepackage[a4paper,margin=20mm,noheadfoot$lscape]{geometry}
+	\\usepackage{fontspec,multicol}
+	\\defaultfontfeatures{Ligatures=TeX}
+	\\setmainfont{$font}\\setmonofont{$font}
+	\\makeatletter %JCL
+	\\def\\verbatimfile#1{\\begingroup
+			    \\@verbatim \\frenchspacing \\@vobeyspaces
+			    \\input#1 \\endgroup
+	}
+	\\newcounter{lineno}
+	\\def\\verbatimlisting#1{\\setcounter{lineno}{0}%
+	    \\begingroup \\@verbatim \\frenchspacing \\@vobeyspaces \\parindent=20pt
+	    \\everypar{\\stepcounter{lineno}\\llap{{\\fontsize{7}{9}\\selectfont\\thelineno}\\ \\ }}\\input#1
+	    \\endgroup
+	}
+	\\makeatother
+	\\pagestyle{empty}
+	\\begin{document}
+	\\fontsize{$size}{$((size+white))pt}\\selectfont
+	$colbeg
+	EOF
+
+n=0
+for i; do
+   eval "expand --tabs=$tabstop $i |$cat >>$tmp/text.$n"
+   $page && echo -e "\\eject\\n" >> "$tmp/main.tex"
+   [[ -n $title ]] && echo -e "\\section{$i}\\n" >> "$tmp/main.tex"
+   if $number; then
+      echo "\\verbatimlisting{text.$n}" >> "$tmp/main.tex"
+   else
+      echo "\\verbatimfile{text.$n}" >> "$tmp/main.tex"
+   fi
+   ((n++))
+done
+
+cat <<-EOF >> "$tmp/main.tex"
+	$colend
+	\\end{document}
+	EOF
+warn 'compiling'
+cd "$tmp" || die "Could not cd to $tmp"
+echo x |lualatex main.tex &>/dev/null ||
+   die "Errors running lualatex; inspect $tmp"
+
+if [[ -n $out ]]; then
+   mv -f "$tmp/main.pdf" "$out"
+else
+   cat "$tmp/main.pdf"
+fi
+rm -rf "$tmp"
