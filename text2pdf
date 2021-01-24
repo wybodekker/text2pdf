@@ -234,7 +234,7 @@ for i; do
    if [[ ! -e $i ]]; then
       mess+=("File $i not found")
    else
-      enc=$(file -b --mime-encoding "$i")
+      enc=$(file --mime-encoding -bL "$i")
       [[ $enc =~ us-ascii|utf-8 ]] ||
          mess+=("$i: encoding ($enc) is not us-ascii or utf-8; please convert")
    fi
