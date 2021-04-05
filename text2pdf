@@ -13,7 +13,7 @@ text2pdf [options] [file ...]
 -H|--Help	Print full documentation via less and exit
 -V|--version	Print version and exit
 -c|--cols=ARG	Print ARG columns on the page, default: 1
--f|--font=ARG	iset TTF/OTF font to ARG; default: Latin Modern Mono
+-f|--font=ARG	set TTF/OTF font to ARG; default: Latin Modern Mono
 -l|--lscape	Print landscape; default: portrait
 -n|--number	Number the lines; default: no numbering
 -o|--out=ARG	write PDF to ARG[.pdf]; default: write to standard output
@@ -47,8 +47,8 @@ number the lines.
 	the text of each file will start on a new page.
 	
 --cols=n	
-	the output will be printed in |n| columns, where n=1-9, default: 1. This is
-	useful, for example, for printing a file listing.
+	the output will be printed in |n| columns, where n=1-9, default: 1.
+	This is useful, for example, for printing a file listing.
 	
 --size=f	
 	set the point size to |f|, default: 10.
@@ -58,10 +58,10 @@ number the lines.
 	
 --font=NAME	
 	changes the font to |NAME|, which must be the PostScript name of an
-	available TTF or OTF font.  The default (probably in your distro) is
-	[EversonMono-Bold](www.gnu.org/software/freefont/). Be sure the choose a font that
-	contains all characters occurring in your file. You probably also want
-	the font to be monospaced.
+	available TTF or OTF font. The default (probably in your distro) is
+	Latin Modern Mono. Be sure the choose a font that contains all
+	characters occurring in your file. You probably also want the font
+	to be monospaced.
 	
 --number	
 	lines will be numbered.
@@ -71,7 +71,7 @@ number the lines.
 	
 --squeeze	
 	multiple empty lines will be squeezed to a single empty line.
-	
+
 = Author
 [Wybo Dekker](wybo@dekkerdocumenten.nl)
 
