@@ -9,21 +9,21 @@ Myname="${0##*/}"
 text2pdf [options] [file ...]	
 
 == Options
--h|--help	Print short help and exit
--H|--Help	Print full documentation via less and exit
--V|--version	Print version and exit
--c|--cols=ARG	Print ARG columns on the page, default: 1
--f|--font=ARG	set TTF/OTF font to ARG; default: Latin Modern Mono
--l|--lscape	Print landscape; default: portrait
--n|--number	Number the lines; default: no numbering
--o|--out=ARG	write PDF to ARG[.pdf]; default: write to standard output
--p|--page	Start each file on a new page.
--s|--size=ARG	Fontsize to ARG points; default: 10
---squeeze	squeeze multiple newlines in input to one
---tabstop=ARG	Have tabs |i| characters apart; default: 8
--t|--title=ARG	Print counter + file name before the output of each file
--w|--white	Set white between lines to ARG points; default: 2
-
+-h|--help	print short help and exit
+-H|--Help	print full documentation via less and exit
+-V|--version	print version and exit
+-c|--cols=X	print X columns on the page, default: 1
+-f|--font=X	set TTF/OTF font to X; default: Latin Modern Mono
+-l|--lscape	print landscape; default: portrait
+-m|--margin=X	set margins to X mm; default: 10
+-n|--number	number the lines; default: no numbering
+-o|--out=X	write PDF to X[.pdf]; default: write to standard output
+-p|--page	start each file on a new page.
+-s|--size=X	set fontsize to X points; default: 10
+   --squeeze	squeeze multiple newlines in input to one
+   --tabstop=X	have tabs X characters apart; default: 8
+-t|--title	print counter + file name before the output of each file
+-w|--white	set white between lines to X points; default: 2
 
 = Description
 text2pdf converts one or more text files to pdf. You can print the text in
@@ -46,28 +46,31 @@ number the lines.
 --page	
 	the text of each file will start on a new page.
 	
---cols=n	
-	the output will be printed in |n| columns, where n=1-9, default: 1.
+--cols=X	
+	the output will be printed in X columns, where n=1-9, default: 1.
 	This is useful, for example, for printing a file listing.
 	
---size=f	
-	set the point size to |f|, default: 10.
+--size=X	
+	set the point size to X, default: 10.
 	
---white=w	
-	set white between lines to |w|, default: 2.
+--white=X	
+	set white between lines to X, default: 2.
 	
---font=NAME	
-	changes the font to |NAME|, which must be the PostScript name of an
+--font=X	
+	changes the font to X, which must be the PostScript name of an
 	available TTF or OTF font. The default (probably in your distro) is
 	Latin Modern Mono. Be sure the choose a font that contains all
 	characters occurring in your file. You probably also want the font
 	to be monospaced.
-	
+
+--margin=X	
+	set the margins to X mm; default: 10mm
+
 --number	
 	lines will be numbered.
 	
---tabstop=n	
-	tabs will be expanded to |n| spaces. The default is 8.
+--tabstop=X	
+	tabs will be expanded to X spaces. The default is 8.
 	
 --squeeze	
 	multiple empty lines will be squeezed to a single empty line.
@@ -94,9 +97,8 @@ description:	check if |int| is a positive integer and print it; if not,
 DOC
 #-------------------------------------------------------------------------------
 inttest() {
-   [[ $2 =~ [1-9][0-9]+ ]] ||
+   [[ $2 =~ ^[1-9][0-9]*$ ]] ||
       die "Argument for --$1 ($2) is not a positive integer"
-   printf %d "$2"
 }
 
 :<<'DOC' #---------------------------------------------------------------------
@@ -130,8 +132,8 @@ handle_options() {
    local options
    options=$(getopt \
       -n "$Myname" \
-      -o hHVIb:c:f:lnpr:s:w:t: \
-      -l help,Help,version,batch:,cols:,font:,lscap,numer,page,size:,white:,squeeze,tabstop:,title,width: \
+      -o hHVIb:c:f:lm:no:pr:s:w:t \
+      -l help,Help,version,batch:,cols:,font:,lscap,margin:,number,out:,page,size:,white:,squeeze,tabstop:,title,width: \
       -- "$@"
    ) || exit 1
    eval set -- "$options"
@@ -141,25 +143,26 @@ handle_options() {
    font='Latin Modern Mono'
    lscape=
    number=false
+   margin=10
    out=''
    page=false
    size=10
    white=2
    tabstop=8
-   title=
+   title=false
    while true; do
       case $1 in
-      (-h|--help)      # Print short help and exit
+      (-h|--help)      # print short help and exit
             	       helpsrt
 		       ;;
-      (-H|--Help)      # Print full documentation via less and exit
+      (-H|--Help)      # print full documentation via less and exit
             	       helpall
 		       ;;
-      (-V|--version)   # Print version and exit
+      (-V|--version)   # print version and exit
             	       echo $Version
 		       exit
 		       ;;
-      (-c|--cols=ARG)  # Print ARG columns on the page, default: 1
+      (-c|--cols=X)    # print X columns on the page, default: 1
 		       inttest cols "$2"
 		       case $2 in
 		       (1)      colbeg=
@@ -171,27 +174,31 @@ handle_options() {
 		       esac
 		       shift 2
 		       ;;
-      (-f|--font=ARG)  # Set TTF/OTF font to ARG; default: Latin Modern Mono
+      (-f|--font=X)    # set TTF/OTF font to X; default: Latin Modern Mono
 		       font=$2
 		       shift 2
 		       ;;
-      (-l|--lscape)    # Print landscape; default: portrait
+      (-l|--lscape)    # print landscape; default: portrait
 		       lscape=',landscape'
 		       shift
 		       ;;
-      (-n|--number)    # Number the lines; default: no numbering
+      (-m|--margin=X)  # set margins to X mm; default: 10
+		       margin=$2
+		       shift 2
+		       ;;
+      (-n|--number)    # number the lines; default: no numbering
 		       number=true
 		       shift
 		       ;;
-      (-o|--out=ARG)   # write PDF to ARG[.pdf]; default: write to standard output
+      (-o|--out=X)     # write PDF to X[.pdf]; default: write to standard output
 		       out=${2%.pdf}.pdf
 		       shift 2
 		       ;;
-      (-p|--page)      # Start each file on a new page.
+      (-p|--page)      # start each file on a new page.
 		       page=true
 		       shift
 		       ;;
-      (-s|--size=ARG)  # Fontsize to ARG points; default: 10
+      (-s|--size=X)    # set fontsize to X points; default: 10
 		       size=$2
 		       shift 2
 		       ;;
@@ -199,15 +206,15 @@ handle_options() {
 		       cat='cat -s'
 		       shift
 		       ;;
-      (--tabstop=ARG)  # Have tabs |i| characters apart; default: 8
+      (--tabstop=X)    # have tabs X characters apart; default: 8
 		       tabstop=$2
 		       shift 2
 		       ;;
-      (-t|--title=ARG) # Print counter + file name before the output of each file
-		       title='\headtext'
+      (-t|--title)     # print counter + file name before the output of each file
+		       title=true
 		       shift
 		       ;;
-      (-w|--white)     # Set white between lines to ARG points; default: 2
+      (-w|--white)     # set white between lines to X points; default: 2
 		       white=$2
 		       shift 2
 		       ;;
@@ -251,7 +258,7 @@ fi
 cat <<-EOF > "$tmp/main.tex"
 	%!lualatex
 	\\documentclass{article}
-	\\usepackage[a4paper,margin=20mm,noheadfoot$lscape]{geometry}
+	\\usepackage[a4paper,margin=${margin}mm,noheadfoot$lscape]{geometry}
 	\\usepackage{fontspec,multicol}
 	\\defaultfontfeatures{Ligatures=TeX}
 	\\setmainfont{$font}\\setmonofont{$font}
@@ -275,9 +282,9 @@ cat <<-EOF > "$tmp/main.tex"
 
 n=0
 for i; do
-   eval "expand --tabs=$tabstop $i |$cat >>$tmp/text.$n"
-   $page && echo -e "\\eject\\n" >> "$tmp/main.tex"
-   [[ -n $title ]] && echo -e "\\section{$i}\\n" >> "$tmp/main.tex"
+   eval "expand --tabs=$tabstop '$i' |$cat >>$tmp/text.$n"
+   $page  && printf '\\newpage\n' 	   >> "$tmp/main.tex"
+   $title && printf '\\section{%s}\n' "$i" >> "$tmp/main.tex"
    if $number; then
       echo "\\verbatimlisting{text.$n}" >> "$tmp/main.tex"
    else
@@ -290,13 +297,12 @@ cat <<-EOF >> "$tmp/main.tex"
 	$colend
 	\\end{document}
 	EOF
-warn 'compiling'
 cd "$tmp" || die "Could not cd to $tmp"
 echo x |lualatex main.tex &>/dev/null ||
    die "Errors running lualatex; inspect $tmp"
 
 if [[ -n $out ]]; then
-   mv -f "$tmp/main.pdf" "$out"
+   mv -f "$tmp/main.pdf" "$PWD/$out"
 else
    cat "$tmp/main.pdf"
 fi
