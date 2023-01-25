@@ -133,7 +133,8 @@ handle_options() {
    options=$(getopt \
       -n "$Myname" \
       -o hHVIb:c:f:lm:no:pr:s:w:t \
-      -l help,Help,version,batch:,cols:,font:,lscap,margin:,number,out:,page,size:,white:,squeeze,tabstop:,title,width: \
+      -l help,Help,version,batch:,cols:,font:,lscap,margin:,number,out:,page \
+      -l size:,white:,squeeze,tabstop:,title,width: \
       -- "$@"
    ) || exit 1
    eval set -- "$options"
@@ -162,19 +163,20 @@ handle_options() {
             	       echo $Version
 		       exit
 		       ;;
-      (-c|--cols=X)    # print X columns on the page, default: 1
+      (-c|--cols)      # print X columns on the page, default: 1
 		       inttest cols "$2"
 		       case $2 in
 		       (1)      colbeg=
 		                colend=
 		                ;;
-		       ([2-9]+) colbeg="\\begin{multicols}{$2}"
+		       ([2-9])  colbeg="\\begin{multicols}{$2}"
 		                colend="\\end{multicols}"
 		                ;;
+		       (*)	die "--cols option needs 1-digit argument"
 		       esac
 		       shift 2
 		       ;;
-      (-f|--font=X)    # set TTF/OTF font to X; default: Latin Modern Mono
+      (-f|--font)    # set TTF/OTF font to X; default: Latin Modern Mono
 		       font=$2
 		       shift 2
 		       ;;
@@ -182,7 +184,7 @@ handle_options() {
 		       lscape=',landscape'
 		       shift
 		       ;;
-      (-m|--margin=X)  # set margins to X mm; default: 10
+      (-m|--margin)  # set margins to X mm; default: 10
 		       margin=$2
 		       shift 2
 		       ;;
@@ -190,7 +192,7 @@ handle_options() {
 		       number=true
 		       shift
 		       ;;
-      (-o|--out=X)     # write PDF to X[.pdf]; default: write to standard output
+      (-o|--out)     # write PDF to X[.pdf]; default: write to standard output
 		       out=${2%.pdf}.pdf
 		       shift 2
 		       ;;
@@ -198,7 +200,7 @@ handle_options() {
 		       page=true
 		       shift
 		       ;;
-      (-s|--size=X)    # set fontsize to X points; default: 10
+      (-s|--size)    # set fontsize to X points; default: 10
 		       size=$2
 		       shift 2
 		       ;;
@@ -206,7 +208,7 @@ handle_options() {
 		       cat='cat -s'
 		       shift
 		       ;;
-      (--tabstop=X)    # have tabs X characters apart; default: 8
+      (--tabstop)    # have tabs X characters apart; default: 8
 		       tabstop=$2
 		       shift 2
 		       ;;
